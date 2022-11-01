@@ -31,6 +31,7 @@ cdef extern from "led-matrix.h" namespace "rgb_matrix":
         uint8_t brightness()
         void Serialize(const char **data, size_t *len)
         bool Deserialize(const char *data, size_t len)
+        bool SerializeRGB(void *buffer, size_t *len, int *width, int *height)
 
     cdef cppclass RuntimeOptions:
       RuntimeOptions() except +

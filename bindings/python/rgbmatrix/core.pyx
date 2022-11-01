@@ -1,9 +1,10 @@
 # distutils: language = c++
 
 from libcpp cimport bool
-from libc.stdint cimport uint8_t, uint32_t, uintptr_t
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uintptr_t
 from PIL import Image
 import cython
+from cython cimport view
 from cpython cimport PyBUF_WRITABLE
 
 cdef object init_key = object()
@@ -148,6 +149,16 @@ cdef class FrameCanvas(Canvas):
         self.__canvas.Serialize(<const char**>&data, &len)
         return FrameData.__create(self, data, len)
 
+    def getRGB(self):
+        cdef int rows, columns
+        cdef size_t size
+        if not self.__canvas.SerializeRGB(NULL, &size, &rows, &columns):
+            raise Exception("SerializeRGB failed when getting buffer size")
+        cdef view.array data = view.array(shape=(rows, columns, 3), itemsize=sizeof(uint16_t), format=b'H')
+        size = data.len
+        if not self.__canvas.SerializeRGB(data.data, &size, NULL, NULL):
+            raise Exception("SerializeRGB failed when getting data")
+        return data
     @property
     def pwmBits(self): return self.__canvas.pwmbits()
     @pwmBits.setter
