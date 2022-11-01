@@ -298,6 +298,7 @@ static int GetNumCores() {
   return GetPiModel() == PI_MODEL_1 ? 1 : 4;
 }
 
+#ifndef SIM_MODE
 static uint32_t *mmap_bcm_register(off_t register_offset) {
   off_t base = BCM2709_PERI_BASE;  // safe fallback guess.
   switch (GetPiModel()) {
@@ -341,26 +342,34 @@ static uint32_t *mmap_bcm_register(off_t register_offset) {
   }
   return result;
 }
+#endif
 
 static bool mmap_all_bcm_registers_once() {
   if (s_GPIO_registers != NULL) return true;  // alrady done.
+#ifndef SIM_MODE
+    // The common GPIO registers.
+    s_GPIO_registers = mmap_bcm_register(GPIO_REGISTER_OFFSET);
+    if (s_GPIO_registers == NULL) {
+      return false;
+    }
 
-  // The common GPIO registers.
-  s_GPIO_registers = mmap_bcm_register(GPIO_REGISTER_OFFSET);
-  if (s_GPIO_registers == NULL) {
-    return false;
-  }
+    // Time measurement. Might fail when run as non-root.
+    uint32_t *timereg = mmap_bcm_register(COUNTER_1Mhz_REGISTER_OFFSET);
+    if (timereg != NULL) {
+      s_Timer1Mhz = timereg + 1;
+    }
 
-  // Time measurement. Might fail when run as non-root.
-  uint32_t *timereg = mmap_bcm_register(COUNTER_1Mhz_REGISTER_OFFSET);
-  if (timereg != NULL) {
-    s_Timer1Mhz = timereg + 1;
-  }
-
-  // Hardware pin-pulser. Might fail when run as non-root.
-  s_PWM_registers  = mmap_bcm_register(GPIO_PWM_BASE_OFFSET);
-  s_CLK_registers  = mmap_bcm_register(GPIO_CLK_BASE_OFFSET);
-
+    // Hardware pin-pulser. Might fail when run as non-root.
+    s_PWM_registers  = mmap_bcm_register(GPIO_PWM_BASE_OFFSET);
+    s_CLK_registers  = mmap_bcm_register(GPIO_CLK_BASE_OFFSET);
+#else
+    // Allocate dummy memory for resiters
+    s_GPIO_registers = (volatile uint32_t*)calloc(1, REGISTER_BLOCK_SIZE);
+    if (s_GPIO_registers == NULL) {
+      return false;
+    }
+    // PWM and CLK registers are NULL
+#endif
   return true;
 }
 
@@ -600,7 +609,7 @@ static void print_overshoot_histogram() {
 class HardwarePinPulser : public PinPulser {
 public:
   static bool CanHandle(gpio_bits_t gpio_mask) {
-#ifdef DISABLE_HARDWARE_PULSES
+#if defined(DISABLE_HARDWARE_PULSES) || defined(SIM_MODE)
     return false;
 #else
     const bool can_handle = gpio_mask==GPIO_BIT(18) || gpio_mask==GPIO_BIT(12);
