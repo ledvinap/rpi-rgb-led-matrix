@@ -369,6 +369,7 @@ public:
   // This method should only be called if FrameCanvas is off-screen.
   bool Deserialize(const char *data, size_t len);
 
+  bool SerializeRGB(void *buffer, size_t *len, int *rows = NULL, int *columns = NULL) const;
   // Copy content from other FrameCanvas owned by the same RGBMatrix.
   void CopyFrom(const FrameCanvas &other);
 

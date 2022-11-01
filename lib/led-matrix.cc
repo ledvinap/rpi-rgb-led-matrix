@@ -757,6 +757,9 @@ void FrameCanvas::Serialize(const char **data, size_t *len) const {
 bool FrameCanvas::Deserialize(const char *data, size_t len) {
   return frame_->Deserialize(data, len);
 }
+bool FrameCanvas::SerializeRGB(void *buffer, size_t *len, int *rows, int *columns ) const {
+  return frame_->SerializeRGB(buffer, len, rows, columns);
+}
 void FrameCanvas::CopyFrom(const FrameCanvas &other) {
   frame_->CopyFrom(other.frame_);
 }

@@ -572,7 +572,7 @@ bool Framebuffer::SetPWMBits(uint8_t value) {
   return true;
 }
 
-inline gpio_bits_t *Framebuffer::ValueAt(int double_row, int column, int bit) {
+inline gpio_bits_t *Framebuffer::ValueAt(int double_row, int column, int bit) const {
   return &bitplane_buffer_[ double_row * (columns_ * kBitPlanes)
                             + bit * columns_
                             + column ];
@@ -799,6 +799,62 @@ void Framebuffer::Serialize(const char **data, size_t *len) const {
 bool Framebuffer::Deserialize(const char *data, size_t len) {
   if (len != buffer_size_) return false;
   memcpy(bitplane_buffer_, data, len);
+  return true;
+}
+
+bool Framebuffer::SerializeRGB(void *buffer, size_t *len, int *rows, int *columns) const {
+  size_t size_needed = height_ * columns_ * sizeof(uint16_t) * 3;
+  if (rows) *rows = height_;
+  if (columns) *columns = columns_;
+
+  if (buffer == NULL) {   // return sizes only
+    if (len) *len = size_needed;
+    return true;
+  }
+
+  if (!len || *len < size_needed)
+    return false;
+
+  memset(buffer, 0, *len);
+  uint16_t (&screen)[height_][columns_][3] = *(uint16_t (*)[height_][columns_][3])buffer;
+
+#define PIXEL(doublerow, panel, row, column, color)  screen[doublerow + double_rows_ * (panel * SUB_PANELS_ + row)][column][color]
+  const struct HardwareMapping &h = *hardware_mapping_;
+  for (uint8_t row_loop = 0; row_loop < double_rows_; ++row_loop) {
+    // Rows can't be switched very quickly without ghosting, so we do the
+    // full PWM of one row before switching rows.
+    for (int b = 0; b < kBitPlanes; ++b) {
+      const gpio_bits_t *row_data = ValueAt(row_loop, 0, b);
+      // While the output enable is still on, we can already clock in the next
+      // data.
+      for (int col = 0; col < columns_; ++col) {
+        const gpio_bits_t &out = row_data[col];
+        PIXEL(row_loop, 0, 0, col, 0) |= (!!(out & h.p0_r1)) << b;
+        PIXEL(row_loop, 0, 0, col, 1) |= (!!(out & h.p0_g1)) << b;
+        PIXEL(row_loop, 0, 0, col, 2) |= (!!(out & h.p0_b1)) << b;
+        PIXEL(row_loop, 0, 1, col, 0) |= (!!(out & h.p0_r2)) << b;
+        PIXEL(row_loop, 0, 1, col, 1) |= (!!(out & h.p0_g2)) << b;
+        PIXEL(row_loop, 0, 1, col, 2) |= (!!(out & h.p0_b2)) << b;
+        if (parallel_ >= 2) {
+          PIXEL(row_loop, 1, 0, col, 0) |= (!!(out & h.p1_r1)) << b;
+          PIXEL(row_loop, 1, 0, col, 1) |= (!!(out & h.p1_g1)) << b;
+          PIXEL(row_loop, 1, 0, col, 2) |= (!!(out & h.p1_b1)) << b;
+          PIXEL(row_loop, 1, 1, col, 0) |= (!!(out & h.p1_r2)) << b;
+          PIXEL(row_loop, 1, 1, col, 1) |= (!!(out & h.p1_g2)) << b;
+          PIXEL(row_loop, 1, 1, col, 2) |= (!!(out & h.p1_b2)) << b;
+        }
+        if (parallel_ >= 3) {
+          PIXEL(row_loop, 2, 0, col, 0) |= (!!(out & h.p2_r1)) << b;
+          PIXEL(row_loop, 2, 0, col, 1) |= (!!(out & h.p2_g1)) << b;
+          PIXEL(row_loop, 2, 0, col, 2) |= (!!(out & h.p2_b1)) << b;
+          PIXEL(row_loop, 2, 1, col, 0) |= (!!(out & h.p2_r2)) << b;
+          PIXEL(row_loop, 2, 1, col, 1) |= (!!(out & h.p2_g2)) << b;
+          PIXEL(row_loop, 2, 1, col, 2) |= (!!(out & h.p2_b2)) << b;
+        }
+        // ignore CM4 panels for now
+      }
+    }
+  }
   return true;
 }
 

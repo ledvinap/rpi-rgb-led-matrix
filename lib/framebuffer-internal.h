@@ -119,6 +119,7 @@ public:
 
   void Serialize(const char **data, size_t *len) const;
   bool Deserialize(const char *data, size_t len);
+  bool SerializeRGB(void *buffer, size_t *len, int *width, int *height) const;
   void CopyFrom(const Framebuffer *other);
 
   // Canvas-inspired methods, but we're not implementing this interface to not
@@ -166,7 +167,7 @@ private:
   // Of course, that means that we store unrelated bits in the frame-buffer,
   // but it allows easy access in the critical section.
   gpio_bits_t *bitplane_buffer_;
-  inline gpio_bits_t *ValueAt(int double_row, int column, int bit);
+  inline gpio_bits_t *ValueAt(int double_row, int column, int bit) const;
 
   PixelDesignatorMap **shared_mapper_;  // Storage in RGBMatrix.
 };
