@@ -88,7 +88,7 @@ protected:
  * to worry about the mapping within a single panel, the overall panel
  * construction with chains and parallel is already taken care of.
  *
- * Don't forget to register the new multiplexer sin CreateMultiplexMapperList()
+ * Don't forget to register the new multiplexer in CreateMultiplexMapperList()
  * below. After that, the new mapper is available in the --led-multiplexing
  * option.
  */

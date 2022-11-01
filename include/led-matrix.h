@@ -237,7 +237,8 @@ public:
 
   // Apply a pixel mapper. This is used to re-map pixels according to some
   // scheme implemented by the PixelMapper. Does _not_ take ownership of the
-  // mapper. Mapper can be NULL, in which case nothing happens.
+  // mapper and mapper can be safely destroyed after applying it. Mapper can be
+  // NULL, in which case nothing happens.
   // Returns a boolean indicating if this was successful.
   bool ApplyPixelMapper(const PixelMapper *mapper);
 
