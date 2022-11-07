@@ -17,7 +17,6 @@
 #define RPI_GPIO_INTERNAL_H
 
 #include "gpio-bits.h"
-
 #include <vector>
 
 // Putting this in our namespace to not collide with other things called like
@@ -43,31 +42,33 @@ public:
   // Returns the bits that were available and could be reserved.
   gpio_bits_t RequestInputs(gpio_bits_t inputs);
 
+
+#define DSB_ST() do { asm volatile("dsb\tst"); } while (false)
+
   // Set the bits that are '1' in the output. Leave the rest untouched.
   inline void SetBits(gpio_bits_t value) {
     if (!value) return;
     WriteSetBits(value);
-    for (int i = 0; i < slowdown_; ++i) {
-      WriteSetBits(value);
-    }
+      DSB_ST();
   }
 
   // Clear the bits that are '1' in the output. Leave the rest untouched.
   inline void ClearBits(gpio_bits_t value) {
     if (!value) return;
     WriteClrBits(value);
-    for (int i = 0; i < slowdown_; ++i) {
-      WriteClrBits(value);
-    }
+    DSB_ST();
   }
 
   // Write all the bits of "value" mentioned in "mask". Leave the rest untouched.
   inline void WriteMaskedBits(gpio_bits_t value, gpio_bits_t mask) {
     // Writing a word is two operations. The IO is actually pretty slow, so
     // this should probably  be unnoticable.
-    ClearBits(~value & mask);
-    SetBits(value & mask);
+    WriteClrBits(~value & mask);
+    WriteSetBits(value & mask);
+    DSB_ST();
   }
+
+ #undef DSB_ST
 
   inline gpio_bits_t Read() const { return ReadRegisters() & input_bits_; }
 
