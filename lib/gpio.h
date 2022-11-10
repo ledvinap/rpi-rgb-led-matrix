@@ -43,8 +43,8 @@ public:
   gpio_bits_t RequestInputs(gpio_bits_t inputs);
 
 
-#define DSB_ST() do { asm volatile("dsb\tst"); } while (false)
-
+// #define DSB_ST() do { asm volatile("dsb\tst"); } while (false)
+#define DSB_ST() do { for (int __n = 0; __n < slowdown_; __n++) *gpio_clr_bits_low_ = 0; } while (false)
   // Set the bits that are '1' in the output. Leave the rest untouched.
   inline void SetBits(gpio_bits_t value) {
     if (!value) return;
