@@ -1,5 +1,6 @@
 # TODO: This contains a lot of {c|p}ython build boilerplate, this needs cleanup.
-PYTHON     ?= python
+# use python3 if available, else python
+PYTHON     ?= $(shell python3 --version >/dev/null 2>&1 && echo python3 || echo python)
 SETUP      := setup.py
 BUILD_ARGS := build --build-lib .
 INST_ARGS  := install

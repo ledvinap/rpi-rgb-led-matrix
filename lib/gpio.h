@@ -42,21 +42,18 @@ public:
   // Returns the bits that were available and could be reserved.
   gpio_bits_t RequestInputs(gpio_bits_t inputs);
 
-
-#define DSB_ST() do { asm volatile("dsb\tst"); } while (false)
-
   // Set the bits that are '1' in the output. Leave the rest untouched.
   inline void SetBits(gpio_bits_t value) {
     if (!value) return;
     WriteSetBits(value);
-      DSB_ST();
+    delay();
   }
 
   // Clear the bits that are '1' in the output. Leave the rest untouched.
   inline void ClearBits(gpio_bits_t value) {
     if (!value) return;
     WriteClrBits(value);
-    DSB_ST();
+    delay();
   }
 
   // Write all the bits of "value" mentioned in "mask". Leave the rest untouched.
@@ -65,10 +62,8 @@ public:
     // this should probably  be unnoticable.
     WriteClrBits(~value & mask);
     WriteSetBits(value & mask);
-    DSB_ST();
+    delay();
   }
-
- #undef DSB_ST
 
   inline gpio_bits_t Read() const { return ReadRegisters() & input_bits_; }
 
@@ -76,6 +71,20 @@ public:
   static bool IsPi4();
 
 private:
+  inline void delay() const {
+    switch(slowdown_) {
+      case -1:
+#if __ARM_ARCH >= 7
+        asm volatile("dsb\tst");
+#endif
+        break;
+      case 0:
+        break;
+      default:
+        for (int n = 0; n < slowdown_; n++)
+          *gpio_clr_bits_low_ = 0;
+    }
+  }
   inline gpio_bits_t ReadRegisters() const {
     return (static_cast<gpio_bits_t>(*gpio_read_bits_low_)
 #ifdef ENABLE_WIDE_GPIO_COMPUTE_MODULE

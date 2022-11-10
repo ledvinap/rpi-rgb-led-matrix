@@ -275,21 +275,21 @@ cdef class RGBMatrixOptions:
 
     property gpio_slowdown:
         def __get__(self): return self.__runtime_options.gpio_slowdown
-        def __set__(self, uint8_t value): self.__runtime_options.gpio_slowdown = value
+        def __set__(self, int value): self.__runtime_options.gpio_slowdown = value
 
     property daemon:
         def __get__(self): return self.__runtime_options.daemon
-        def __set__(self, uint8_t value): self.__runtime_options.daemon = value
+        def __set__(self, int value): self.__runtime_options.daemon = value
 
     property drop_privileges:
         def __get__(self): return self.__runtime_options.drop_privileges
-        def __set__(self, uint8_t value): self.__runtime_options.drop_privileges = value
+        def __set__(self, int value): self.__runtime_options.drop_privileges = value
 
     @property
     def do_gpio_init(self):
         return self.__runtime_options.do_gpio_init
     @do_gpio_init.setter
-    def do_gpio_init(self, uint8_t value):
+    def do_gpio_init(self, bool value):
         self.__runtime_options.do_gpio_init = value
 
 cdef class RGBMatrix(Canvas):
