@@ -165,8 +165,9 @@ DEFINES+=$(USER_DEFINES)
 
 DEFINES+=-DDEFAULT_HARDWARE='"$(HARDWARE_DESC)"'
 INCDIR=../include
-CFLAGS=-W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC -march=native  $(DEFINES)
+CFLAGS=-W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC -march=native $(DEFINES)
 CXXFLAGS=$(CFLAGS) -fno-exceptions -std=c++11
+DEPENDS=$(OBJECTS:.o=.d)
 
 all : $(TARGET).a $(TARGET).so.1
 
@@ -176,19 +177,16 @@ $(TARGET).a : $(OBJECTS)
 $(TARGET).so.1 : $(OBJECTS)
 	$(CXX) -shared -Wl,-soname,$@ -o $@ $^ -lpthread  -lrt -lm -lpthread
 
-led-matrix.o: led-matrix.cc $(INCDIR)/led-matrix.h
-thread.o : thread.cc $(INCDIR)/thread.h
-framebuffer.o: framebuffer.cc framebuffer-internal.h
-graphics.o: graphics.cc utf8-internal.h
+-include $(DEPENDS)
 
-%.o : %.cc compiler-flags
-	$(CXX) -I$(INCDIR) $(CXXFLAGS) -c -o $@ $<
+%.o : %.cc compiler-flags Makefile
+	$(CXX) -I$(INCDIR) $(CXXFLAGS) -MD -MP -c -o $@ $<
 
-%.o : %.c compiler-flags
-	$(CC)  -I$(INCDIR) $(CFLAGS) -c -o $@ $<
+%.o : %.c compiler-flags Makefile
+	$(CC)  -I$(INCDIR) $(CFLAGS) -MD -MP -c -o $@ $<
 
 clean:
-	rm -f $(OBJECTS) $(TARGET).a $(TARGET).so.1
+	rm -f $(OBJECTS) $(DEPENDS) $(TARGET).a $(TARGET).so.1
 
 compiler-flags: FORCE
 	@echo '$(CXX) $(CXXFLAGS)' | cmp -s - $@ || echo '$(CXX) $(CXXFLAGS)' > $@
