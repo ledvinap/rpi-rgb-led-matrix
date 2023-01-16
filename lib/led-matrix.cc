@@ -650,12 +650,18 @@ RGBMatrix *RGBMatrix::CreateFromOptions(const RGBMatrix::Options &options,
 
   // For the Pi4, we might need 2, maybe up to 4. Let's open up to 5.
   // on supproted architectures, -1 will emit memory barier (DSB ST) after GPIO write
-  if (runtime_options.gpio_slowdown < (__ARM_ARCH >= 7 ? -1 : 0)
+#if defined(__ARM_ARCH) && __ARM_ARCH >= 7
+#define MIN_SLOWDOWN -1
+#else
+#define MIN_SLOWDOWN 0
+#endif
+  if (runtime_options.gpio_slowdown < MIN_SLOWDOWN
       || runtime_options.gpio_slowdown > 5) {
     fprintf(stderr, "--led-slowdown-gpio=%d is outside usable range\n",
             runtime_options.gpio_slowdown);
     return NULL;
   }
+#undef MIN_SLOWDOWN
 
   static GPIO io;  // This static var is a little bit icky.
   if (runtime_options.do_gpio_init
