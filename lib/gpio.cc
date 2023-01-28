@@ -152,7 +152,8 @@ GPIO::GPIO() : output_bits_(0), input_bits_(0), reserved_bits_(0),
 }
 
 gpio_bits_t GPIO::InitOutputs(gpio_bits_t outputs,
-                              bool adafruit_pwm_transition_hack_needed) {
+                              bool adafruit_pwm_transition_hack_needed,
+                              gpio_bits_t outputs_set, gpio_bits_t outputs_clr) {
   if (s_GPIO_registers == NULL) {
     fprintf(stderr, "Attempt to init outputs but not yet Init()-ialized.\n");
     return 0;
@@ -196,6 +197,11 @@ gpio_bits_t GPIO::InitOutputs(gpio_bits_t outputs,
   for (int b = 0; b <= kMaxAvailableBit; ++b) {
     if (outputs & GPIO_BIT(b)) {
       INP_GPIO(b);   // for writing, we first need to set as input.
+      // TODO - high registers
+      if (outputs_set & GPIO_BIT(b))
+        gpio_set_bits_low_[b / 32] = 1U << (b % 32);
+      else if (outputs_clr & GPIO_BIT(b))
+        gpio_clr_bits_low_[b / 32] = 1U << (b % 32);
       OUT_GPIO(b);
     }
   }

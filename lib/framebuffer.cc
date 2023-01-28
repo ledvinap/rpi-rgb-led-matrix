@@ -450,7 +450,10 @@ Framebuffer::~Framebuffer() {
                                                   strlen("adafruit-hat")));
   // Initialize outputs, make sure that all of these are supported bits.
   const gpio_bits_t result = io->InitOutputs(all_used_bits,
-                                             is_some_adafruit_hat);
+                                             is_some_adafruit_hat,
+                                             h.output_enable,   // set bits : set output_enable to prevent startup glitch
+                                             0                  // clr_bits
+    );
   assert(result == all_used_bits);  // Impl: all bits declared in gpio.cc ?
 
   std::vector<int> bitplane_timings;

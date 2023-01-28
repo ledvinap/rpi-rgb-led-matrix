@@ -36,7 +36,9 @@ public:
   // (never use the optional adafruit_hack_needed parameter, it is used
   // internally to this library).
   gpio_bits_t InitOutputs(gpio_bits_t outputs,
-                          bool adafruit_hack_needed = false);
+                          bool adafruit_hack_needed = false,
+                          gpio_bits_t outputs_set = 0, gpio_bits_t outputs_clr = 0
+    );
 
   // Request given bitmap of GPIO inputs.
   // Returns the bits that were available and could be reserved.
